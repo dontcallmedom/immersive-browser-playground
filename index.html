@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset=utf-8>
+    <title>Immersive Reader</title>
+    <script src="node_modules/aframe/dist/aframe.min.js"></script>
+    <script src="node_modules/rasterizehtml/dist/rasterizeHTML.allinone.js"></script>
+    <script src="node_modules/aframe-html/index.js"></script>
+
+  </head>
+  <body>
+    <a-scene>
+      <a-assets>
+        <video loop=true autoplay src="media/forest.mp4" id="forest"></video>
+      </a-assets>
+      <a-videosphere src="#forest"></a-videosphere>
+
+      <a-plane id="screen" position="0 -1 -4" rotation="-5 0 0" scale="3 3 3" html-material="width:600;height:500"></a-plane>
+      <a-camera>
+      </a-camera>
+    </a-scene>
+  </body>
+  <script id=content type="text/book">
+
+<div style='margin:3em;'>
+<p class="last">A Cassandre<br><br>Mignonne, allons voir si la rose<br>Qui ce matin avoit desclose<br>Sa robe de pourpre au Soleil,<br>A point perdu ceste vesprée<br>Les plis de sa robe pourprée,<br>Et son teint au vostre pareil.<br><br>Las ! voyez comme en peu d'espace,<br>Mignonne, elle a dessus la place<br>Las ! las ses beautez laissé cheoir !<br>Ô vrayment marastre Nature,<br>Puis qu'une telle fleur ne dure<br>Que du matin jusques au soir !<br><br>Donc, si vous me croyez, mignonne,<br>Tandis que vostre âge fleuronne<br>En sa plus verte nouveauté,<br>Cueillez, cueillez vostre jeunesse :<br>Comme à ceste fleur la vieillesse<br>Fera ternir vostre beauté.</p></div>
+  </script>
+  <script>
+    document.querySelector("a-scene").addEventListener("loaded", function() {
+    var component = document.querySelector("#screen").components["html-material"];
+      component.getDocument().body.style='background-color:#CDD';
+      component.getDocument().body.innerHTML = document.getElementById("content").textContent;
+      component.updateTexture();
+    });
+</script>
+</html>
