@@ -1,5 +1,9 @@
 {
-  "dependencies": {
-    "aframe-html": "0.0.4"
-  }
+  "devDependencies": {
+    "electron": "^27.0.2"
+  },
+  "scripts": {
+    "start": "electron ."
+  },
+  "main": "main.js"
 }
