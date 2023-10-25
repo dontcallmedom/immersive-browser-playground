@@ -4,20 +4,14 @@
     <meta charset=utf-8>
     <title>Immersive Reader</title>
     <script src="node_modules/aframe/dist/aframe.min.js"></script>
-    <script>
-  AFRAME.registerComponent('cursor-listener', {
-    init: function () {
-      this.el.addEventListener('click', function (evt) {
-	console.log('I was clicked at: ', evt.detail.intersection.point);
-      });
-    }
-  });
-
-      </script>
     <script src="browser.js"></script>
   </head>
   <body>
-    <div id="mode"><label><input type="radio" name="mode" value="classic" checked>Classic</label><input value="navigation" type="radio" name="mode">Navigation</label><label><input type="radio" name="mode" value="page">Immersive page</label></div>
+    <div id="mode">
+      <label><input type="radio" name="mode" value="classic" checked>Classic</label>
+      <label><input type="radio" name="mode" value="page">Immersive page</label>
+      <label><input value="navigation" type="radio" name="mode">Navigation</label>
+    </div>
     <a-scene cursor="rayOrigin: mouse" raycaster="objects: a-plane">
       <a-assets>
         <canvas id="f0" />
@@ -28,7 +22,7 @@
       </a-assets>
 
       <a-plane cursor-listener material="src: #f0" id="screen0" position="0 1 -2" rotation="-5 0 0" scale="3 3 3" data-raycastable paint-image="id:content0"></a-plane>
-      <a-plane material="src: #f1" id="screen1" position="-2 1 -3" rotation="-5 10 0" scale="3 3 3" paint-image="id:content1"></a-plane>
+      <a-plane material="src: #f1" id="screen1" position="3 1 -2" rotation="0 -10 0" scale="3 3 3" paint-image="id:content1"></a-plane>
       <a-plane material="src: #f2" id="screen2" position="3 1 -3" rotation="-5 -10 0" scale="3 3 3" paint-image="id:content2"></a-plane>
       <a-plane material="src: #f3" id="screen3" position="-4 1 -4" rotation="-5 20 0" scale="3 3 3" paint-image="id:content3"></a-plane>
       <a-plane material="src: #f4" id="screen4" position="6 1 -4" rotation="-5 -20 0" scale="3 3 3" paint-image="id:content4"></a-plane>

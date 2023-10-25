@@ -13,6 +13,10 @@ let browserWindow;
 
 let windows = [];
 
+let illustrationSrc;
+
+let url;
+
 const createBrowserWindow = () => {
   browserWindow = new BrowserWindow({
     width: 800,
@@ -71,7 +75,12 @@ const showMode = mode => {
       windows[i+1].loadURL("about:blank");
     }
     break;
-
+  case "page":
+    for (let i = 1 ; i < 4; i++) {
+      windows[i+1].loadURL("about:blank");
+    }
+    //windows[1].loadURL(url);
+    windows[0].webContents.send('illustrate');
     break;
   case "navigation":
     for (let i = 0 ; i < Math.min(sortedLinks.length, 4); i++) {
@@ -94,7 +103,8 @@ app.whenReady().then(() => {
   for (let i = 0  ; i < 5 ; i++) {
     createContentWindow(i);
   }
-  windows[0].loadURL('https://fr.wikipedia.org/wiki/Route_de_la_soie');
+  url = process.argv[2] ?? 'https://fr.wikipedia.org/wiki/Route_de_la_soie';
+  windows[0].loadURL(url);
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createBrowserWindow();
@@ -108,6 +118,11 @@ app.whenReady().then(() => {
   ipcMain.handle('scroll', (event, delta) => {
     windows[0].webContents.send('scroll', delta);
   });
+  ipcMain.handle('loadImage', (event, src) => {
+    browserWindow.webContents.send('paint', "content1", src);
+  });
+
+
   ipcMain.handle('setMode', (event, mode) => {
     showMode(mode);
   });
