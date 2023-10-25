@@ -9,7 +9,17 @@
     init: function () {
       this.textureLoader = new THREE.TextureLoader();
       this.pending = false;
+
+      window.document.getElementById("mode").addEventListener("change", e => {
+	ipcRenderer.setMode(e.target.value);
+      });
+
+      window.addEventListener("mousewheel", event => {
+	ipcRenderer.scroll(event.deltaY);
+      });
+
       ipcRenderer.onPaint(async (_event, target, image) => {
+	console.log(this.data.id, target);
         if (target !== this.data.id || this.pending) {
           // Paint message is for someone else
           // or we're already busy re-drawing the texture

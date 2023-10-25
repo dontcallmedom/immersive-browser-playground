@@ -1,4 +1,4 @@
-const { app, BrowserWindow, screen } = require('electron');
+const { app, BrowserWindow, screen, ipcMain } = require('electron');
 const path = require('node:path');
 
 /**
@@ -11,11 +11,7 @@ let scaleFactor;
  */
 let browserWindow;
 
-/**
- * Handle to the window that contains the HTML that we want to render in
- * the immersive browser.
- */
-let contentWindow;
+let windows = [];
 
 const createBrowserWindow = () => {
   browserWindow = new BrowserWindow({
@@ -27,24 +23,30 @@ const createBrowserWindow = () => {
     titleBarStyle: 'hidden'
   });
   browserWindow.on('closed', _ => {
-    contentWindow.destroy();
-    contentWindow = null;
+    windows.forEach(win => {
+      win.destroy();
+    });
+    windows = null;
     browserWindow = null;
   });
-  browserWindow.loadFile('index.html');
+  browserWindow.loadFile("index.html");
 };
 
-const createContentWindow = () => {
-  contentWindow = new BrowserWindow({
+const createContentWindow = (position = 0) => {
+  const options = {
     webPreferences: {
       offscreen: true
     },
     show: false,
     width: 800,
     height: 600
-  });
+  };
 
-  contentWindow.webContents.on('paint', (event, dirty, image) => {
+  if (position === 0) {
+    options.webPreferences.preload = path.join(__dirname, 'preload-content.js');
+  }
+  const win = new BrowserWindow(options);
+  win.webContents.on('paint', (event, dirty, image) => {
     let resized = image;
     if (scaleFactor !== 1) {
       // Immersive browser window uses the image as texture. The dimensions of
@@ -54,10 +56,29 @@ const createContentWindow = () => {
         height: Math.floor(image.getSize().height / scaleFactor)
       });
     }
-    browserWindow.webContents.send('paint', 'content', resized);
+    browserWindow.webContents.send('paint', "content" + position, resized);
   });
-  contentWindow.webContents.setFrameRate(10);
-  contentWindow.loadFile('content.html');
+  win.webContents.setFrameRate(10);
+  windows[position] = win;
+};
+
+let sortedLinks;
+
+const showMode = mode => {
+  switch(mode) {
+  case "classic":
+    for (let i = 0 ; i < 4; i++) {
+      windows[i+1].loadURL("about:blank");
+    }
+    break;
+
+    break;
+  case "navigation":
+    for (let i = 0 ; i < Math.min(sortedLinks.length, 4); i++) {
+      windows[i+1].loadURL(sortedLinks[i]);
+    }
+    break;
+  }
 };
 
 app.whenReady().then(() => {
@@ -67,14 +88,36 @@ app.whenReady().then(() => {
   const primaryDisplay = screen.getPrimaryDisplay();
   scaleFactor = primaryDisplay.scaleFactor;
 
+  let mode = "classic";
+
   createBrowserWindow();
-  createContentWindow();
+  for (let i = 0  ; i < 5 ; i++) {
+    createContentWindow(i);
+  }
+  windows[0].loadURL('https://fr.wikipedia.org/wiki/Route_de_la_soie');
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createBrowserWindow();
     }
   });
-});
+
+  ipcMain.handle('console', function(e, ...args) {
+    console.log(...args);
+  });
+
+  ipcMain.handle('scroll', (event, delta) => {
+    windows[0].webContents.send('scroll', delta);
+  });
+  ipcMain.handle('setMode', (event, mode) => {
+    showMode(mode);
+  });
+
+
+  ipcMain.handle('open', (event, links) => {
+    sortedLinks = Object.keys(links).sort((l1, l2) => links[l1] - links[l2]);
+  });
+})
+
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
