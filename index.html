@@ -4,24 +4,15 @@
     <meta charset=utf-8>
     <title>Immersive Reader</title>
     <script src="node_modules/aframe/dist/aframe.min.js"></script>
-
+    <script src="browser.js"></script>
   </head>
   <body>
-
-
     <a-scene>
       <a-assets>
-	<img id="f">
-	<video loop=true autoplay src="media/forest.mp4" id="forest"></video>
+        <canvas id="f" />
       </a-assets>
-      
-      <!--<a-videosphere src="#forest"></a-videosphere>-->
-
-      <a-plane material="src: #f" id="screen" position="0 -1 -4" rotation="-5 0 0" scale="3 3 3"></a-plane>
-      <a-camera>
-      </a-camera>
+      <a-plane id="screen" position="0 -1 -4" rotation="-5 0 0" scale="3 3 3" material="src:#f" paint-image></a-plane>
+      <a-camera></a-camera>
     </a-scene>
-    <script src="browser.js">
-      </script>
   </body>
 </html>
