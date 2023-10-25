@@ -1,5 +1,6 @@
-const { app, BrowserWindow, screen } = require('electron');
+const { app, BrowserWindow, ipcMain, screen } = require('electron');
 const path = require('node:path');
+const fs = require('node:fs');
 
 /**
  * Scale factor of the primary display.
@@ -16,6 +17,12 @@ let browserWindow;
  * the immersive browser.
  */
 let contentWindow;
+
+/**
+ * Featured in content displayed
+ */
+let featured;
+let featuredNeedsUpdate = false;
 
 const createBrowserWindow = () => {
   browserWindow = new BrowserWindow({
@@ -37,7 +44,8 @@ const createBrowserWindow = () => {
 const createContentWindow = () => {
   contentWindow = new BrowserWindow({
     webPreferences: {
-      offscreen: true
+      offscreen: true,
+      preload: path.join(__dirname, 'preload-content.js')
     },
     show: false,
     width: 800,
@@ -54,10 +62,24 @@ const createContentWindow = () => {
         height: Math.floor(image.getSize().height / scaleFactor)
       });
     }
-    browserWindow.webContents.send('paint', 'content', resized);
+    browserWindow.webContents.send('paint', 'content', resized.toDataURL());
+
+    if (featuredNeedsUpdate) {
+      contentWindow.webContents.send('featuresupdated');
+      featuredNeedsUpdate = false;
+      for (const feature of featured) {
+        feature.contentSize = {
+          width: resized.getSize().width,
+          height: resized.getSize().height
+        };
+        const crop = resized.crop(feature.rect);
+        browserWindow.webContents.send('paint', feature.name, crop.toDataURL(), feature);
+      }
+    }
   });
   contentWindow.webContents.setFrameRate(10);
   contentWindow.loadFile('content.html');
+  //contentWindow.loadURL('https://www.w3.org/');
 };
 
 app.whenReady().then(() => {
@@ -73,6 +95,11 @@ app.whenReady().then(() => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createBrowserWindow();
     }
+  });
+
+  ipcMain.handle('featured', async (event, list) => {
+    featured = list;
+    featuredNeedsUpdate = true;
   });
 });
 

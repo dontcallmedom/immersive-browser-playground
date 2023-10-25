@@ -1,4 +1,7 @@
 (function (AFRAME) {
+  // Maximum displacement on the z-axis
+  const ZMAX = 0.20;
+
   // The a-frame component refreshes an image used as texture
   // whenever a new one is received from the main thread.
   AFRAME.registerComponent('paint-image', {
@@ -17,10 +20,11 @@
         }
         this.pending = new Promise(resolve => {
           this.textureLoader.load(
-            image.toDataURL(),
+            image,
             texture => {
-              this.el.getObject3D('mesh').material.map = texture;
-              this.el.getObject3D('mesh').material.map.needsUpdate = true;
+              const material = this.el.getObject3D('mesh').material;
+              material.map = texture;
+              material.map.needsUpdate = true;
               resolve();
             },
             null,
@@ -34,5 +38,61 @@
         this.pending = null;
       });
     }
+  });
+
+  let featured = {};
+  ipcRenderer.onPaint(async (_event, name, image, feature) => {
+    // Ignore paint events that are not for features
+    if (!name || !name.startsWith('feature-')) {
+      return;
+    }
+
+    const contentPlane = document.querySelector('#content');
+    const material = contentPlane.getObject3D('mesh').material;
+    const fromPageCenter = {
+      dx: feature.center.x - feature.contentSize.width / 2,
+      dy: feature.contentSize.height / 2 - feature.center.y
+    }
+    console.log('fromPageCenter', fromPageCenter.dx, fromPageCenter.dy);
+    feature.position = {
+      x: contentPlane.object3D.position.x + fromPageCenter.dx / feature.contentSize.width * contentPlane.getAttribute('geometry').width,
+      y: contentPlane.object3D.position.y + fromPageCenter.dy / feature.contentSize.height * contentPlane.getAttribute('geometry').height,
+      z: contentPlane.object3D.position.z
+    };
+    console.log('position', feature.position.x, feature.position.y);
+    feature.geometry = {
+      width: contentPlane.getAttribute('geometry').width * feature.rect.width / feature.contentSize.width,
+      height: contentPlane.getAttribute('geometry').height * feature.rect.height / feature.contentSize.height
+    };
+    console.log('geometry', feature.geometry.width, feature.geometry.height);
+
+    const textureLoader = new THREE.TextureLoader();
+    let featurePlane = featured[name];
+    if (!featurePlane) {
+      featurePlane = document.createElement('a-plane');
+      document.querySelector('a-scene').appendChild(featurePlane);
+      featured[name] = featurePlane;
+    }
+
+
+    featurePlane.setAttribute('position', `${feature.position.x} ${feature.position.y} ${feature.position.z + 0.001}`);
+    featurePlane.setAttribute('width', feature.geometry.width);
+    featurePlane.setAttribute('height', feature.geometry.height);
+    textureLoader.load(
+      image,
+      texture => {
+        featurePlane.getObject3D('mesh').material = new THREE.MeshStandardMaterial({ map: texture });
+        featurePlane.setAttribute('animation', {
+          property: 'position',
+          to: { z: feature.position.z + feature.translateZ / 100 * ZMAX },
+          easing: 'easeInOutSine',
+          dur: 2000
+        });
+      },
+      null,
+      err => {
+        console.error(err);
+      }
+    );
   });
 })(AFRAME);

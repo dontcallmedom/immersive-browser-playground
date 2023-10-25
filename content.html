@@ -1,23 +1,89 @@
-<!doctype html><html lang=en>
-<title>Mignonne, allons voir si la rose…</title>
-  <style>
-    body {
-        font-size: 40px;
-        background-color:#CDD;
-animation-name: disco;
-animation-duration: 12s;
-    animation-iteration-count: infinite;    
-    animation-play-state: running;
- }
-@keyframes disco {
-  from { background-color: #CDD; }
-  to { background-color: #F00;}
-}
-</style>
-<meta charset=utf-8>
-<div style='margin:3em;'>
-  <div class=title><h1>Mignonne…</h1></div>
-  <div class=content>
-<p class="last"><br>Mignonne, allons voir si la <strong style="color: #FAA">rose</strong><br>Qui ce matin avoit desclose<br>Sa robe de pourpre au Soleil,<br>A point perdu ceste vesprée<br>Les plis de sa robe pourprée,<br>Et son teint au vostre pareil.<br><br>Las ! voyez comme en peu d'espace,<br>Mignonne, elle a dessus la place<br>Las ! las ses beautez laissé cheoir !<br>Ô vrayment marastre Nature,<br>Puis qu'une telle fleur ne dure<br>Que du matin jusques au soir !<br><br>Donc, si vous me croyez, mignonne,<br>Tandis que vostre âge fleuronne<br>En sa plus verte nouveauté,<br>Cueillez, cueillez vostre jeunesse :<br>Comme à ceste fleur la vieillesse<br>Fera ternir vostre beauté.</p></div>
-</div>
+<!doctype html>
+<html>
+  <head>
+    <meta charset=utf-8 />
+    <title>Mignonne</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        margin: 0;
+        background-color: transparent;
+      }
+      body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        padding: 1em;
+        color: #333;
+        border: thick solid orange;
+        background-color: transparent;
+      }
 
+      .flex {
+        display: flex;
+        flex-wrap: nowrap;
+        justify-content: space-evenly;
+      }
+
+      .flex .large {
+        flex-shrink: 0;
+      }
+
+      .flex p {
+        background-color: #F8F8F8;
+        animation-duration: 12s;
+        animation-name: disco;
+        animation-iteration-count: infinite;
+        animation-play-state: running;
+        margin: 0;
+      }
+
+      .flex img {
+        max-width: 100%;
+      }
+
+      @keyframes disco {
+        0% { background-color: #F8F8F8; }
+        50% { background-color: lightpink; }
+        100% { background-color: #F8F8F8; }
+      }
+    </style>
+  </head>
+  <body>
+    <h1 data-xr-z="40">Mignonne, allons voir si la rose</h1>
+    <h2 data-xr-z="20">by Pierre de Ronsard</h2>
+    <div class="flex">
+      <div class="large">
+        <p>
+          A Cassandre<br>
+          <br>
+          Mignonne, allons voir si la rose<br>
+          Qui ce matin avoit desclose<br>
+          Sa robe de pourpre au Soleil,<br>
+          A point perdu ceste vesprée<br>
+          Les plis de sa robe pourprée,<br>
+          Et son teint au vostre pareil.<br>
+          <br>
+          Las ! voyez comme en peu d'espace,<br>
+          Mignonne, elle a dessus la place<br>
+          Las ! las ses beautez laissé cheoir !<br>
+          Ô vrayment marastre Nature,<br>
+          Puis qu'une telle fleur ne dure<br>
+          Que du matin jusques au soir !<br>
+          <br>
+          Donc, si vous me croyez, mignonne,<br>
+          Tandis que vostre âge fleuronne<br>
+          En sa plus verte nouveauté,<br>
+          Cueillez, cueillez vostre jeunesse :<br>
+          Comme à ceste fleur la vieillesse<br>
+          Fera ternir vostre beauté.
+        </p>
+      </div>
+      <div data-xr-z="10">
+        <img src="media/rose.jpg" />
+      </div>
+    </div>
+  </body>
+</html>
