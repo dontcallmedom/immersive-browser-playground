@@ -1,3 +1,7 @@
-window.addEventListener('DOMContentLoaded', () => {
-  document.body.append("Hello world");
+const { contextBridge, ipcRenderer } = require('electron');
+
+contextBridge.exposeInMainWorld("ipcRenderer", {
+  onPaint: (cb) => ipcRenderer.on("paint", cb)
 });
+
+

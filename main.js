@@ -1,23 +1,43 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 // inclusion du chemin du module Node.js au tout début de votre fichier
-const path = require('node:path')
+const path = require('node:path');
 
-const createWindow = () => {
-  const win = new BrowserWindow({
+let browserWindow; 
+
+const createBrowserWindow = () => {
+  browserWindow = new BrowserWindow({
     width: 800,
     height: 600,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js')
     }
   });
-  win.loadFile('hello.html');
-}
+  browserWindow.loadFile('index.html');
+};
+
+const createContentWindow = () => {
+  const win = new BrowserWindow({
+    webPreferences: {
+      offscreen: true
+    },
+    show: false,
+    width: 800,
+    height: 600,
+  });
+
+  win.webContents.on('paint', (event, dirty, image) => {
+    browserWindow.webContents.send('paint', image);
+  });
+  win.webContents.setFrameRate(10);
+  win.loadFile('content.html');
+};
+
 
 app.whenReady().then(() => {
-  createWindow();
-
+  createBrowserWindow();
+  createContentWindow();
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+    if (BrowserWindow.getAllWindows().length === 0) createBrowserWindow()
   })
 })
 

@@ -5,5 +5,8 @@
   "scripts": {
     "start": "electron ."
   },
-  "main": "main.js"
+  "main": "main.js",
+  "dependencies": {
+    "aframe": "^1.4.2"
+  }
 }
