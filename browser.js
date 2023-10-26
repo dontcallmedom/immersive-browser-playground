@@ -1,16 +1,28 @@
+let viewport;
+document.addEventListener("DOMContentLoaded", () => {
+  ipcRenderer.isLoaded();
+});
+
+ipcRenderer.onViewportGeometry(function (_event, width, height) {
+  viewport = {
+    width,
+    height
+    };
+});
+
+
 (function (AFRAME) {
   const imageCache = {};
 
   AFRAME.registerComponent('cursor-listener', {
     init: function () {
       this.el.addEventListener('click', function (evt) {
-	// convert to document coordinates
-	// FIXME: do not hardcode
-	// x: -1.5 → 1.5
-	// y: -0.5 → 600
-	//    2.5 -> 0
-	const offsetX = (evt.detail.intersection.point.x + 1.5)*800/3;
-	const offsetY = (-evt.detail.intersection.point.y + 2.5)*600/3;
+	const screen = evt.target.object3D;
+
+	// Y axis is oriented in opposed directions in 3D and in viewport
+	const clickVector = evt.target.object3D.worldToLocal(new THREE.Vector3(evt.detail.intersection.point.x, evt.detail.intersection.point.y, evt.detail.intersection.point.z));
+	const offsetX = (clickVector.x + 1/2)*viewport.width;
+	const offsetY = -(clickVector.y - 1/2)*viewport.height;
 	ipcRenderer.sendClick(offsetX, offsetY);
       });
     }
@@ -50,12 +62,12 @@
 	    img.src = src;
 	    await isLoaded;
 	    const cv = document.createElement("canvas");
-	    cv.width = 800;
-	    cv.height = 600;
+	    cv.width = viewport.width;
+	    cv.height = viewport.height;
 	    const ctx = cv.getContext("2d");
 	    const aspectRatio = img.width / img.height;
-	    const width = Math.min(800, 600*aspectRatio);
-	    const height = Math.min(600, 800/aspectRatio);
+	    const width = Math.min(cv.width, cv.height*aspectRatio);
+	    const height = Math.min(cv.height, cv.width/aspectRatio);
 	    ctx.drawImage(img, 0, 0, width, height);
 	    imageCache[image] = cv;
 	  }

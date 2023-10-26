@@ -17,10 +17,13 @@ let illustrationSrc;
 
 let url;
 
+const defaultViewportWidth = 800;
+const defaultViewportHeight = 600;
+
 const createBrowserWindow = () => {
   browserWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: 1024,
+    height: 800,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js')
     },
@@ -42,8 +45,8 @@ const createContentWindow = (position = 0) => {
       offscreen: true
     },
     show: false,
-    width: 800,
-    height: 600
+    width: defaultViewportWidth,
+    height: defaultViewportHeight
   };
 
   if (position === 0) {
@@ -113,6 +116,10 @@ app.whenReady().then(() => {
 
   ipcMain.handle('console', function(e, ...args) {
     console.log(...args);
+  });
+
+  ipcMain.handle('browserIsLoaded', function(e) {
+    browserWindow.webContents.send('viewportGeometry', defaultViewportWidth*scaleFactor, defaultViewportHeight*scaleFactor);
   });
 
   ipcMain.handle('sendClick', function(e, x, y) {
