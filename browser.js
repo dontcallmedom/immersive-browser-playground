@@ -1,6 +1,6 @@
 (function (AFRAME) {
-  // Maximum displacement on the z-axis
-  const ZMAX = 0.20;
+  // Maximum displacement on the z-axis (in meters)
+  const ZMAX = 0.05;
 
   // The a-frame component refreshes an image used as texture
   // whenever a new one is received from the main thread.
@@ -74,14 +74,17 @@
       featured[name] = featurePlane;
     }
 
-
+    featurePlane.setAttribute('id', feature.name);
     featurePlane.setAttribute('position', `${feature.position.x} ${feature.position.y} ${feature.position.z + 0.001}`);
     featurePlane.setAttribute('width', feature.geometry.width);
     featurePlane.setAttribute('height', feature.geometry.height);
+    featurePlane.setAttribute('material', 'side:double; metalness:0');
+    featurePlane.setAttribute('shadow', 'cast: true; receive: false');
     textureLoader.load(
       image,
       texture => {
-        featurePlane.getObject3D('mesh').material = new THREE.MeshStandardMaterial({ map: texture });
+        featurePlane.getObject3D('mesh').material.map = texture;
+        featurePlane.getObject3D('mesh').material.needsUpdate = true;
         featurePlane.setAttribute('animation', {
           property: 'position',
           to: { z: feature.position.z + feature.translateZ / 100 * ZMAX },

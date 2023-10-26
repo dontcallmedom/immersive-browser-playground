@@ -53,6 +53,9 @@ const createContentWindow = () => {
   });
 
   contentWindow.webContents.on('paint', (event, dirty, image) => {
+    if (!browserWindow) {
+      return;
+    }
     let resized = image;
     if (scaleFactor !== 1) {
       // Immersive browser window uses the image as texture. The dimensions of
