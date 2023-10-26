@@ -3,6 +3,12 @@ const path = require('node:path');
 const fs = require('node:fs');
 
 /**
+ * Default content browsing window dimensions
+ */
+const defaultViewportWidth = 800;
+const defaultViewportHeight = 600;
+
+/**
  * Scale factor of the primary display.
  */
 let scaleFactor;
@@ -10,25 +16,45 @@ let scaleFactor;
 /**
  * Handle to the immersive browser window
  */
-let browserWindow;
-
-let windows = [];
-
-let illustrationSrc;
-
-let url;
-
-const defaultViewportWidth = 800;
-const defaultViewportHeight = 600;
+let immersiveWindow;
 
 /**
- * Featured in content displayed
+ * Handles to the offscreen content windows.
+ *
+ * First content window in the list contains the main content being rendered.
+ * Further content windows contain side content (images or companion page).
+ */
+let contentWindows = [];
+
+/**
+ * Requested URL
+ */
+let url = 'https://fr.wikipedia.org/wiki/Route_de_la_soie';
+
+/**
+ * List of "features" to render with a 3D effect in the main content plane.
+ * The list is sent by the main content window when 3D effects are enabled.
  */
 let featured;
 let featuredNeedsUpdate = false;
 
-const createBrowserWindow = () => {
-  browserWindow = new BrowserWindow({
+/**
+ * Sorted list of links to use to fill side content planes.
+ * The list is sent by the main content window when the page is done loading.
+ * It is only useful in "navigation" mode
+ */
+let sortedLinks;
+
+
+/**
+ * Create the immersive browser window
+ *
+ * The window renders the a-frame 3D scene that represents the immersive
+ * experience. The scene typically contains planes used to render web
+ * content (actually rendered from offscreen content windows).
+ */
+const createImmersiveWindow = () => {
+  immersiveWindow = new BrowserWindow({
     width: 1024,
     height: 800,
     webPreferences: {
@@ -36,33 +62,46 @@ const createBrowserWindow = () => {
     },
     titleBarStyle: 'hidden'
   });
-  browserWindow.on('closed', _ => {
-    windows.forEach(win => {
+  immersiveWindow.on('closed', _ => {
+    contentWindows.forEach(win => {
       win.destroy();
     });
-    windows = null;
-    browserWindow = null;
+    contentWindows = null;
+    immersiveWindow = null;
   });
-  browserWindow.loadFile("index.html");
+  immersiveWindow.loadFile('index.html');
 };
 
+/**
+ * Create offscreen content window at the given position in the list
+ *
+ * The content window is used to render an actual web page in 2D in the
+ * background. Whenever the content is painted, a copy of the rendered
+ * content is sent to the immersive browser window, so that the corresponding
+ * content plane in the a-frame scene can be updated.
+ *
+ * The main content window (position 0) can also apply a 3D effect to a set of
+ * features (identified through `data-xr-z` attributes in the HTML, and
+ * effectively identified as rectangles in the painted image. When needed, the
+ * function sends these rectangles to the immersive browser window so that it
+ * may convert them to planes in the 3D scene.
+ */
 const createContentWindow = (position = 0) => {
   const options = {
     webPreferences: {
-      offscreen: true,
-      preload: path.join(__dirname, 'preload-content.js')
+      offscreen: true
     },
     show: false,
     width: defaultViewportWidth,
     height: defaultViewportHeight
   };
-
   if (position === 0) {
-    options.webPreferences.preload = path.join(__dirname, 'preload-content.js');
+    options.webPreferences.preload = path.join(__dirname, 'preload-content.js')
   }
-  const win = new BrowserWindow(options);
-  win.webContents.on('paint', (event, dirty, image) => {
-    if (!browserWindow) {
+
+  const contentWindow = new BrowserWindow(options);
+  contentWindow.webContents.on('paint', (event, dirty, image) => {
+    if (!immersiveWindow) {
       return;
     }
     let resized = image;
@@ -74,10 +113,10 @@ const createContentWindow = (position = 0) => {
         height: Math.floor(image.getSize().height / scaleFactor)
       });
     }
-    browserWindow.webContents.send('paint', "content" + position, resized.toDataURL());
+    immersiveWindow.webContents.send('paint', "content" + position, resized.toDataURL());
 
     if (position === 0 && featuredNeedsUpdate) {
-      win.webContents.send('featuresupdated');
+      contentWindow.webContents.send('featuresupdated');
       featuredNeedsUpdate = false;
       for (const feature of featured) {
         feature.contentSize = {
@@ -85,33 +124,30 @@ const createContentWindow = (position = 0) => {
           height: resized.getSize().height
         };
         const crop = resized.crop(feature.rect);
-        browserWindow.webContents.send('paint', feature.name, crop.toDataURL(), feature);
+        immersiveWindow.webContents.send('paint', feature.name, crop.toDataURL(), feature);
       }
     }
   });
-  win.webContents.setFrameRate(10);
-  windows[position] = win;
+  contentWindow.webContents.setFrameRate(10);
+  contentWindows[position] = contentWindow;
 };
 
-let sortedLinks;
-
 const showMode = mode => {
-  switch(mode) {
+  switch (mode) {
   case "classic":
     for (let i = 0 ; i < 4; i++) {
-      windows[i+1].loadURL("about:blank");
+      contentWindows[i+1].loadURL('about:blank');
     }
     break;
   case "page":
     for (let i = 1 ; i < 4; i++) {
-      windows[i+1].loadURL("about:blank");
+      contentWindows[i+1].loadURL("about:blank");
     }
-    //windows[1].loadURL(url);
-    windows[0].webContents.send('illustrate');
+    contentWindows[0].webContents.send('illustrate');
     break;
   case "navigation":
     for (let i = 0 ; i < Math.min(sortedLinks.length, 4); i++) {
-      windows[i+1].loadURL(sortedLinks[i]);
+      contentWindows[i+1].loadURL(sortedLinks[i]);
     }
     break;
   }
@@ -126,61 +162,82 @@ app.whenReady().then(() => {
 
   let mode = "classic";
 
-  createBrowserWindow();
+  createImmersiveWindow();
   for (let i = 0  ; i < 5 ; i++) {
     createContentWindow(i);
   }
-  url = process.argv[2] ?? 'https://fr.wikipedia.org/wiki/Route_de_la_soie';
+  if (process.argv[2]) {
+    url = process.argv[2];
+  }
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      createBrowserWindow();
+      createImmersiveWindow();
     }
   });
   showMode(mode);
+
+  // Proxy console messages sent by browser windows
   ipcMain.handle('console', function(e, ...args) {
     console.log(...args);
   });
 
+  // Send viewport geometry of main content plane to immersive browser
+  // once it's ready to process the message, and load default page.
   ipcMain.handle('browserIsLoaded', function(e) {
-    browserWindow.webContents.send('viewportGeometry', defaultViewportWidth*scaleFactor, defaultViewportHeight*scaleFactor);
-    windows[0].loadFile("content.html");
+    immersiveWindow.webContents.send('viewportGeometry', defaultViewportWidth*scaleFactor, defaultViewportHeight*scaleFactor);
+    contentWindows[0].loadFile("content.html");
   });
 
+  // Proxy click and scroll events between the main content plane in the
+  // immersive browser window and the related offscreen content window.
   ipcMain.handle('sendClick', function(e, x, y) {
-    windows[0].webContents.send('click', x, y);
+    contentWindows[0].webContents.send('click', x, y);
   });
-
   ipcMain.handle('scroll', (event, delta) => {
-    windows[0].webContents.send('scroll', delta);
-  });
-  ipcMain.handle('loadImage', (event, src) => {
-    browserWindow.webContents.send('paint', "content1", src);
+    contentWindows[0].webContents.send('scroll', delta);
   });
 
+  // An image needs to be loaded on the side of the main content plane
+  ipcMain.handle('loadImage', (event, src) => {
+    immersiveWindow.webContents.send('paint', "content1", src);
+  });
+
+  // Switch to another browsing mode
   ipcMain.handle('setMode', (event, mode) => {
+    console.log('setMode', mode);
     showMode(mode);
   });
 
-  ipcMain.handle('open', (event, links) => {
+  // Received a list of links from the main content window
+  ipcMain.handle('sortedLinks', (event, links) => {
     sortedLinks = Object.keys(links).sort((l1, l2) => links[l1] - links[l2]);
   });
 
+  // Received a list of features that should be highlighed from the main
+  // offscreen content window
   ipcMain.handle('featured', (event, list) => {
     featured = list;
     featuredNeedsUpdate = true;
   });
 
+  // Proxy user actions on buttons between immersive browser window
+  // and the main offscreen content window
   ipcMain.handle('toggle3d', _ => {
-    windows[0].webContents.send('toggle3d');
+    contentWindows[0].webContents.send('toggle3d');
   });
-
   ipcMain.handle('toggle-illustrate', async () => {
-    await windows[0].loadURL(url);
+    if (mode === 'classic') {
+      immersiveWindow.webContents.send('reset');
+    }
+    await contentWindows[0].loadURL(url);
     showMode("page");
   });
   ipcMain.handle('toggle-navigate', async () => {
-    await windows[0].loadURL(url);
+    if (mode === 'classic') {
+      immersiveWindow.webContents.send('reset');
+    }
+    await contentWindows[0].loadURL(url);
     showMode("navigation");
   });
 

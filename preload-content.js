@@ -12,9 +12,9 @@ window.addEventListener('DOMContentLoaded', () => {
     const target = document.elementFromPoint(x, y);
     if (target) {
       target.dispatchEvent(new PointerEvent("click", {
-	bubbles: true,
-	clientX: x,
-	clientY: y
+        bubbles: true,
+        clientX: x,
+        clientY: y
       }));
     }
   });
@@ -28,7 +28,7 @@ window.addEventListener('DOMContentLoaded', () => {
     a[b]++;
     return a;
   }, {});
-  ipcRenderer.invoke('open', weightedLinks);
+  ipcRenderer.invoke('sortedLinks', weightedLinks);
 
 });
 
@@ -52,19 +52,19 @@ function createIllustrationObserver(illustrations) {
   function handleIntersect(entries, observer) {
     for (let entry of entries) {
       if (entry.isIntersecting && entry.intersectionRatio === 1) {
-	if (!visibleImages[entry.target.src]) {
-	  visibleImages[entry.target.src] = entry;
-	}
+        if (!visibleImages[entry.target.src]) {
+          visibleImages[entry.target.src] = entry;
+        }
       } else if (visibleImages[entry.target.src]) {
-	delete visibleImages[entry.target.src];
+        delete visibleImages[entry.target.src];
       }
     }
     let minTop = Infinity;
     let minSrc;
     for (let entry of Object.values(visibleImages)) {
       if (entry.boundingClientRect.top < minTop) {
-	minSrc= entry.target.src;
-	minTop = entry.boundingClientRect.top;
+        minSrc= entry.target.src;
+        minTop = entry.boundingClientRect.top;
       }
     }
     const thumbSrc = minSrc;
