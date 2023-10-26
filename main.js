@@ -100,9 +100,13 @@ app.whenReady().then(() => {
     }
   });
 
-  ipcMain.handle('featured', async (event, list) => {
+  ipcMain.handle('featured', (event, list) => {
     featured = list;
     featuredNeedsUpdate = true;
+  });
+
+  ipcMain.handle('toggle3d', _ => {
+    contentWindow.webContents.send('toggle3d');
   });
 });
 

@@ -41,6 +41,7 @@
   });
 
   let featured = {};
+
   ipcRenderer.onPaint(async (_event, name, image, feature) => {
     // Ignore paint events that are not for features
     if (!name || !name.startsWith('feature-')) {
@@ -97,5 +98,37 @@
         console.error(err);
       }
     );
+  });
+
+  AFRAME.registerComponent('cursor-listener', {
+    schema: {
+      action: { type: 'string', default: '' }
+    },
+
+    init: function () {
+      this.el.addEventListener('animationcomplete', evt => {
+        if (evt.detail.name === 'animation__click_push') {
+          this.el.emit('click-pop');
+        }
+      });
+      this.el.addEventListener('click', evt => {
+        switch (this.data.action) {
+        case 'toggle-wireframe':
+          const isVisible = document.querySelector('#wireframe').object3D.visible;
+          document.querySelector('#wireframe').object3D.visible = !isVisible;
+          break;
+
+        case 'toggle-3d':
+          ipcRenderer.toggle3d();
+          for (const featurePlane of Object.values(featured)) {
+            featurePlane.remove();
+          }
+          featured = {};
+          break;
+        }
+
+        this.el.emit('click-push');
+      });
+    }
   });
 })(AFRAME);

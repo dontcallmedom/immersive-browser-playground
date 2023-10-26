@@ -7,22 +7,38 @@
     <script src="browser.js"></script>
   </head>
   <body>
-    <a-scene>
+    <a-scene cursor="rayOrigin: mouse">
       <a-assets timeout="10000">
         <img id="sky" src="media/blue.jpg" />
         <img id="grass" src="media/grass.jpg" />
         <canvas id="canvas-content"></canvas>
+
+        <a-mixin id="button"
+          geometry="primitive: cylinder; height: 0.001; radius: 0.004"
+          rotation="90 0 0"
+          position="0 0 0.003"
+          material="color: #FA9200"
+          animation__click_push="property: position; to: 0 0 0.0026; easing: easeInOutSine; dur: 100; startEvents: click-push"
+          animation__click_pop="property: position; to: 0 0 0.003; easing: easeInOutSine; dur: 50; startEvents: click-pop"
+          cursor-listener></a-mixin>
+        <a-mixin id="button-container"
+          position="0 0 0.002"
+          geometry="primitive: box; width: 0.010; height: 0.010; depth: 0.002"
+          material="color: #333"></a-mixin>
       </a-assets>
 
+      <!-- Camera -->
       <a-entity id="rig" position="-0.05 1.65 0" rotation="-10 -8 0">
         <a-entity camera look-controls wasd-controls="acceleration:1" position="0 0 0"></a-entity>
       </a-entity>
 
+      <!-- Sky and floor -->
       <a-sky src="#sky"></a-sky>
       <a-plane src="#grass" repeat="10 10"
         height="10" width="10"
         rotation="-90 0 0"></a-plane>
 
+      <!-- Browsing context window plane and containing box -->
       <a-entity id="content-container" position="0 1.6 -0.25">
         <a-plane id="content"
           width="0.297" height="0.223"
@@ -31,9 +47,31 @@
           paint-image></a-plane>
         <a-entity id="wireframe"
           geometry="primitive: box; width: 0.297; height: 0.223; depth: 0.10"
-          material="wireframe: true;"></a-entity>
+          material="wireframe: true;"
+          visible="false"></a-entity>
       </a-entity>
 
+      <!-- Basic UI buttons -->
+      <a-entity position="-0.10 1.48 -0.20">
+        <a-entity
+          geometry="primitive: plane; width: 0.15; height: 0.05"
+          material="color: #ffb347"
+          position="0.06 -0.01 0"></a-entity>
+        <a-entity>
+          <a-entity mixin="button-container"></a-entity>
+          <a-entity mixin="button" cursor-listener="action:toggle-wireframe"></a-entity>
+          <a-entity position="0.16 0 0"
+            text="value: Toggle wireframe; width:0.30; color: black"></a-entity>
+        </a-entity>
+        <a-entity position="0 -0.02 0">
+          <a-entity mixin="button-container"></a-entity>
+          <a-entity mixin="button" cursor-listener="action:toggle-3d"></a-entity>
+          <a-entity position="0.16 0 0"
+            text="value: Toggle 3D rendering; width:0.30; color: black"></a-entity>
+        </a-entity>
+      </a-entity>
+
+      <!-- Scene lights -->
       <a-entity light="type: ambient; color: #BBB"></a-entity>
       <a-entity
         light="type: point; color: #FFFFFF; intensity: 0.5;
