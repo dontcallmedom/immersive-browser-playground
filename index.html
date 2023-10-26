@@ -14,7 +14,7 @@
         <canvas id="canvas-content"></canvas>
       </a-assets>
 
-      <a-entity id="rig" position="-0.05 1.6 0" rotation="0 -8 0">
+      <a-entity id="rig" position="-0.05 1.65 0" rotation="-10 -8 0">
         <a-entity camera look-controls wasd-controls="acceleration:1" position="0 0 0"></a-entity>
       </a-entity>
 
@@ -23,14 +23,18 @@
         height="10" width="10"
         rotation="-90 0 0"></a-plane>
 
-      <a-plane id="content"
-        position="0 1.6 -0.25"
-        width="0.297" height="0.223"
-        material="src:#canvas-content; side:double; metalness:0"
-        shadow="cast: false; receive: true"
-        paint-image></a-plane>
+      <a-entity id="content-container" position="0 1.6 -0.25">
+        <a-plane id="content"
+          width="0.297" height="0.223"
+          material="src: #canvas-content; side: double; metalness: 0"
+          shadow="cast: false; receive: true"
+          paint-image></a-plane>
+        <a-entity id="wireframe"
+          geometry="primitive: box; width: 0.297; height: 0.223; depth: 0.10"
+          material="wireframe: true;"></a-entity>
+      </a-entity>
 
-      <a-entity light="type:ambient; color:#BBB"></a-entity>
+      <a-entity light="type: ambient; color: #BBB"></a-entity>
       <a-entity
         light="type: point; color: #FFFFFF; intensity: 0.5;
         castShadow: true;"

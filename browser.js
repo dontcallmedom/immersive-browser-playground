@@ -70,7 +70,7 @@
     let featurePlane = featured[name];
     if (!featurePlane) {
       featurePlane = document.createElement('a-plane');
-      document.querySelector('a-scene').appendChild(featurePlane);
+      document.querySelector('#content-container').appendChild(featurePlane);
       featured[name] = featurePlane;
     }
 
