@@ -4,7 +4,8 @@ contextBridge.exposeInMainWorld("ipcRenderer", {
   onPaint: (cb) => ipcRenderer.on("paint", cb),
   scroll: (delta) => ipcRenderer.invoke("scroll", delta),
   setMode: (mode) => ipcRenderer.invoke("setMode", mode),
-  loadImage: (cb) => ipcRenderer.on("loadImage", cb)
+  loadImage: (cb) => ipcRenderer.on("loadImage", cb),
+  sendClick: (x, y) => ipcRenderer.invoke("sendClick", x, y)
 });
 
 

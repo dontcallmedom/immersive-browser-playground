@@ -115,6 +115,10 @@ app.whenReady().then(() => {
     console.log(...args);
   });
 
+  ipcMain.handle('sendClick', function(e, x, y) {
+    windows[0].webContents.send('click', x, y);
+  });
+
   ipcMain.handle('scroll', (event, delta) => {
     windows[0].webContents.send('scroll', delta);
   });

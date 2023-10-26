@@ -4,7 +4,14 @@
   AFRAME.registerComponent('cursor-listener', {
     init: function () {
       this.el.addEventListener('click', function (evt) {
-	console.log('I was clicked at: ', evt.detail.intersection.point);
+	// convert to document coordinates
+	// FIXME: do not hardcode
+	// x: -1.5 → 1.5
+	// y: -0.5 → 600
+	//    2.5 -> 0
+	const offsetX = (evt.detail.intersection.point.x + 1.5)*800/3;
+	const offsetY = (-evt.detail.intersection.point.y + 2.5)*600/3;
+	ipcRenderer.sendClick(offsetX, offsetY);
       });
     }
   });
