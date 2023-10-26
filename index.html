@@ -7,14 +7,18 @@
     <script src="browser.js"></script>
   </head>
   <body>
-    <a-scene cursor="rayOrigin: mouse">
+    <a-scene cursor="rayOrigin: mouse" raycaster="objects: [data-raycastable]">
       <a-assets timeout="10000">
         <img id="sky" src="media/blue.jpg" />
         <img id="grass" src="media/grass.jpg" />
         <canvas id="canvas-content"></canvas>
+        <canvas id="region1" />
+        <canvas id="region2" />
+        <canvas id="region3" />
+        <canvas id="region4" />
 
         <a-mixin id="button"
-          geometry="primitive: cylinder; height: 0.001; radius: 0.004"
+          geometry="primitive: cylinder; height: 0.001; radius: 0.006"
           rotation="90 0 0"
           position="0 0 0.003"
           material="color: #FA9200"
@@ -23,7 +27,7 @@
           cursor-listener></a-mixin>
         <a-mixin id="button-container"
           position="0 0 0.002"
-          geometry="primitive: box; width: 0.010; height: 0.010; depth: 0.002"
+          geometry="primitive: box; width: 0.015; height: 0.015; depth: 0.002"
           material="color: #333"></a-mixin>
       </a-assets>
 
@@ -40,34 +44,52 @@
 
       <!-- Browsing context window plane and containing box -->
       <a-entity id="content-container" position="0 1.6 -0.25">
-        <a-plane id="content"
+        <a-plane id="content" cursor-listener
           width="0.297" height="0.223"
-          material="src: #canvas-content; side: double; metalness: 0"
+          material="src: #canvas-content; side: double"
           shadow="cast: false; receive: true"
-          paint-image></a-plane>
+          paint-image="id:content0" data-raycastable></a-plane>
         <a-entity id="wireframe"
           geometry="primitive: box; width: 0.297; height: 0.223; depth: 0.10"
           material="wireframe: true;"
           visible="false"></a-entity>
       </a-entity>
 
+      <!-- supplemental screens -->
+      <a-plane material="src: #region1" id="screen1" position="0.3 1.6 -0.25" rotation="0 -10 0" paint-image="id:content1" width="0.297" height="0.223"></a-plane>
+      <a-plane material="src: #region2" id="screen2" position="0.6 1.6 -0.5" rotation="-5 -10 0" paint-image="id:content2" width="0.297" height="0.223"></a-plane>
+      <a-plane material="src: #region3" id="screen3" position="-0.3 1.6 -0.75" rotation="-5 20 0" paint-image="id:content3" width="0.297" height="0.223"></a-plane>
+      <a-plane material="src: #region4" id="screen4" position="-0.6 1.6 -0.75" rotation="-5 -20 0" paint-image="id:content4" width="0.297" height="0.223"></a-plane>
+
       <!-- Basic UI buttons -->
-      <a-entity position="-0.10 1.48 -0.20">
+      <a-entity position="-0.10 1.48 -0.23">
         <a-entity
-          geometry="primitive: plane; width: 0.15; height: 0.05"
+          geometry="primitive: plane; width: 0.18; height: 0.1"
           material="color: #ffb347"
-          position="0.06 -0.01 0"></a-entity>
+          position="0.06 -0.03 0"></a-entity>
         <a-entity>
           <a-entity mixin="button-container"></a-entity>
-          <a-entity mixin="button" cursor-listener="action:toggle-wireframe"></a-entity>
+          <a-entity mixin="button" data-raycastable cursor-listener="action:toggle-wireframe"></a-entity>
           <a-entity position="0.16 0 0"
             text="value: Toggle wireframe; width:0.30; color: black"></a-entity>
         </a-entity>
         <a-entity position="0 -0.02 0">
           <a-entity mixin="button-container"></a-entity>
-          <a-entity mixin="button" cursor-listener="action:toggle-3d"></a-entity>
+          <a-entity mixin="button" data-raycastable cursor-listener="action:toggle-3d"></a-entity>
           <a-entity position="0.16 0 0"
             text="value: Toggle 3D rendering; width:0.30; color: black"></a-entity>
+        </a-entity>
+        <a-entity position="0 -0.04 0">
+          <a-entity mixin="button-container"></a-entity>
+          <a-entity mixin="button" data-raycastable cursor-listener="action:toggle-illustrate"></a-entity>
+          <a-entity position="0.16 0 0"
+            text="value: Wikipedia companion; width:0.30; color: black"></a-entity>
+        </a-entity>
+        <a-entity position="0 -0.06 0">
+          <a-entity mixin="button-container"></a-entity>
+          <a-entity mixin="button" data-raycastable cursor-listener="action:toggle-navigate"></a-entity>
+          <a-entity position="0.16 0 0"
+            text="value: Wikipedia Navigator; width:0.30; color: black"></a-entity>
         </a-entity>
       </a-entity>
 

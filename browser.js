@@ -1,6 +1,22 @@
+let viewport;
+
+document.addEventListener("DOMContentLoaded", () => {
+  ipcRenderer.isLoaded();
+});
+
+ipcRenderer.onViewportGeometry(function (_event, width, height) {
+  viewport = {
+    width,
+    height
+  };
+});
+
+
 (function (AFRAME) {
   // Maximum displacement on the z-axis (in meters)
   const ZMAX = 0.05;
+
+  const imageCache = {};
 
   // The a-frame component refreshes an image used as texture
   // whenever a new one is received from the main thread.
@@ -12,11 +28,42 @@
     init: function () {
       this.textureLoader = new THREE.TextureLoader();
       this.pending = false;
+
+      window.addEventListener("mousewheel", event => {
+        ipcRenderer.scroll(event.deltaY);
+      });
+
+      ipcRenderer.onReset(async _event => {
+        for (const featurePlane of Object.values(featured)) {
+          featurePlane.remove();
+        }
+        featured = {};
+      });
+
       ipcRenderer.onPaint(async (_event, target, image) => {
         if (target !== this.data.id || this.pending) {
           // Paint message is for someone else
           // or we're already busy re-drawing the texture
           return;
+        }
+        if (image.startsWith("https://")) {
+          if (!imageCache[image]) {
+            const src = image;
+            const img = new Image();
+            const isLoaded = new Promise(res => img.addEventListener("load", res));
+            img.src = src;
+            await isLoaded;
+            const cv = document.createElement("canvas");
+            cv.width = viewport.width;
+            cv.height = viewport.height;
+            const ctx = cv.getContext("2d");
+            const aspectRatio = img.width / img.height;
+            const width = Math.min(cv.width, cv.height*aspectRatio);
+            const height = Math.min(cv.height, cv.width/aspectRatio);
+            ctx.drawImage(img, 0, 0, width, height);
+            imageCache[image] = cv;
+          }
+          image = imageCache[image].toDataURL();
         }
         this.pending = new Promise(resolve => {
           this.textureLoader.load(
@@ -47,7 +94,6 @@
     if (!name || !name.startsWith('feature-')) {
       return;
     }
-
     const contentPlane = document.querySelector('#content');
     const material = contentPlane.getObject3D('mesh').material;
     const fromPageCenter = {
@@ -102,7 +148,7 @@
 
   AFRAME.registerComponent('cursor-listener', {
     schema: {
-      action: { type: 'string', default: '' }
+      action: { type: 'string', default: 'content-click' }
     },
 
     init: function () {
@@ -113,6 +159,17 @@
       });
       this.el.addEventListener('click', evt => {
         switch (this.data.action) {
+        case 'content-click':
+          const screen = evt.target.object3D;
+          // Y axis is oriented in opposed directions in 3D and in viewport
+          const clickVector = evt.target.object3D.worldToLocal(new THREE.Vector3(evt.detail.intersection.point.x, evt.detail.intersection.point.y, evt.detail.intersection.point.z));
+          const { width, height} = evt.target.getAttribute("geometry");
+          const { x: scaleX, y: scaleY} = evt.target.object3D.scale;
+          const offsetX = viewport.width* (clickVector.x + scaleX*width/2) / (scaleX*width);
+          const offsetY = -viewport.height*(clickVector.y - scaleY*height/2) / (scaleY*height);
+          ipcRenderer.sendClick(offsetX, offsetY);
+          break;
+
         case 'toggle-wireframe':
           const isVisible = document.querySelector('#wireframe').object3D.visible;
           document.querySelector('#wireframe').object3D.visible = !isVisible;
@@ -124,6 +181,14 @@
             featurePlane.remove();
           }
           featured = {};
+          break;
+
+        case 'toggle-illustrate':
+          ipcRenderer.toggleIllustrate();
+          break;
+
+        case 'toggle-navigate':
+          ipcRenderer.toggleNavigate();
           break;
         }
 
