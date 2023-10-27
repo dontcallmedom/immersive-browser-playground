@@ -121,7 +121,7 @@ ipcRenderer.onViewportGeometry(function (_event, geometry) {
     featurePlane.setAttribute('position', `${feature.position.x} ${feature.position.y} ${feature.position.z + 0.0001}`);
     featurePlane.setAttribute('width', feature.geometry.width);
     featurePlane.setAttribute('height', feature.geometry.height);
-    featurePlane.setAttribute('material', 'side:double; metalness:0');
+    featurePlane.setAttribute('material', 'side:double; metalness:0; transparent: true; opacity: 0.9;');
     featurePlane.setAttribute('shadow', 'cast: true; receive: false');
     featurePlane.setAttribute('visible', 'false');
     featurePlane.setAttribute('animation__show', {

@@ -7,11 +7,10 @@
     <script src="browser.js"></script>
   </head>
   <body>
-    <a-scene cursor="rayOrigin: mouse" raycaster="objects: [data-raycastable]">
+    <a-scene shadow="type:pcfsoft" cursor="rayOrigin: mouse" raycaster="objects: [data-raycastable]">
       <a-assets timeout="10000">
         <img id="sky" src="media/blue.jpg" />
         <img id="grass" src="media/grass.jpg" />
-        <canvas id="canvas-content"></canvas>
         <canvas id="region1" />
         <canvas id="region2" />
         <canvas id="region3" />
@@ -46,7 +45,7 @@
       <a-entity id="content-container" position="0 1.6 -0.25">
         <a-plane id="content" cursor-listener
           width="0.297" height="0.223"
-          material="src: #canvas-content; side: double"
+		 material="side: double; transparent: true"
           shadow="cast: false; receive: true"
           paint-image="id:content0" data-raycastable></a-plane>
         <a-entity id="wireframe"
