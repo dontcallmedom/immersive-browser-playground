@@ -46,25 +46,29 @@ ipcRenderer.onViewportGeometry(function (_event, width, height) {
           // or we're already busy re-drawing the texture
           return;
         }
-        if (image.startsWith("https://")) {
-          if (!imageCache[image]) {
-            const src = image;
-            const img = new Image();
-            const isLoaded = new Promise(res => img.addEventListener("load", res));
-            img.src = src;
-            await isLoaded;
-            const cv = document.createElement("canvas");
-            cv.width = viewport.width;
-            cv.height = viewport.height;
-            const ctx = cv.getContext("2d");
-            const aspectRatio = img.width / img.height;
-            const width = Math.min(cv.width, cv.height*aspectRatio);
-            const height = Math.min(cv.height, cv.width/aspectRatio);
-            ctx.drawImage(img, 0, 0, width, height);
-            imageCache[image] = cv;
+        if (typeof image === "string") {
+          if (image.startsWith("https://")) {
+            if (!imageCache[image]) {
+              const src = image;
+              const img = new Image();
+              const isLoaded = new Promise(res => img.addEventListener("load", res));
+              img.src = src;
+              await isLoaded;
+              const cv = document.createElement("canvas");
+              cv.width = viewport.width;
+              cv.height = viewport.height;
+              const ctx = cv.getContext("2d");
+              const aspectRatio = img.width / img.height;
+              const width = Math.min(cv.width, cv.height*aspectRatio);
+              const height = Math.min(cv.height, cv.width/aspectRatio);
+              ctx.drawImage(img, 0, 0, width, height);
+              imageCache[image] = cv;
+            }
+            image = imageCache[image].toDataURL();
           }
-          image = imageCache[image].toDataURL();
-        }
+        } else {
+	  image = image.toDataURL();
+	}
         this.pending = new Promise(resolve => {
           this.textureLoader.load(
             image,

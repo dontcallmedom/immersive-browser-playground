@@ -26,6 +26,8 @@ let immersiveWindow;
  */
 let contentWindows = [];
 
+const companionContentWindowsNumber = 4;
+
 /**
  * Requested URL
  */
@@ -113,7 +115,7 @@ const createContentWindow = (position = 0) => {
         height: Math.floor(image.getSize().height / scaleFactor)
       });
     }
-    immersiveWindow.webContents.send('paint', "content" + position, resized.toDataURL());
+    immersiveWindow.webContents.send('paint', "content" + position, resized);
 
     if (position === 0 && featuredNeedsUpdate) {
       contentWindow.webContents.send('featuresupdated');
@@ -135,18 +137,24 @@ const createContentWindow = (position = 0) => {
 const showMode = mode => {
   switch (mode) {
   case "classic":
-    for (let i = 0 ; i < 4; i++) {
+    for (let i = 0 ; i < companionContentWindowsNumber; i++) {
       contentWindows[i+1].loadURL('about:blank');
     }
     break;
+  case "3d":
+    for (let i = 0 ; i < companionContentWindowsNumber; i++) {
+      contentWindows[i+1].loadURL("about:blank");
+    }
+    contentWindows[0].webContents.send('toggle3d');
+    break;
   case "page":
-    for (let i = 1 ; i < 4; i++) {
+    for (let i = 1 ; i < companionContentWindowsNumber; i++) {
       contentWindows[i+1].loadURL("about:blank");
     }
     contentWindows[0].webContents.send('illustrate');
     break;
   case "navigation":
-    for (let i = 0 ; i < Math.min(sortedLinks.length, 4); i++) {
+    for (let i = 0 ; i < Math.min(sortedLinks.length, companionContentWindowsNumber); i++) {
       contentWindows[i+1].loadURL(sortedLinks[i]);
     }
     break;
@@ -223,8 +231,9 @@ app.whenReady().then(() => {
 
   // Proxy user actions on buttons between immersive browser window
   // and the main offscreen content window
-  ipcMain.handle('toggle3d', _ => {
-    contentWindows[0].webContents.send('toggle3d');
+  ipcMain.handle('toggle3d', async () => {
+    await contentWindows[0].loadFile("content.html");
+    showMode("3d");
   });
   ipcMain.handle('toggle-illustrate', async () => {
     if (mode === 'classic') {
