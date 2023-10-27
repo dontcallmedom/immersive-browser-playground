@@ -5,6 +5,7 @@ ipcRenderer.on("scroll", function (_event, delta) {
 
 window.console.log = function () { ipcRenderer.invoke("console", ...arguments)};
 window.console.error = function () { ipcRenderer.invoke("console", ...arguments)};
+
 let isLoaded = new Promise(res => window.addEventListener('DOMContentLoaded', res));
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -30,6 +31,10 @@ window.addEventListener('DOMContentLoaded', () => {
   }, {});
   ipcRenderer.invoke('sortedLinks', weightedLinks);
 
+});
+
+window.addEventListener('beforeunload', () => {
+  ipcRenderer.invoke('beforeunload');
 });
 
 
@@ -74,40 +79,100 @@ function createIllustrationObserver(illustrations) {
 
 }
 
-let featuredEnabled = false;
-ipcRenderer.on('toggle3d', _ => {
-  if (featuredEnabled) {
-    for (const el of [...document.querySelectorAll('[data-xr-z]')]) {
-      el.style.visibility = 'visible';
+function get3DEffect(el) {
+  const translateZ = el.getAttribute('data-xr-z');
+  if (el.hasAttribute('data-xr-z')) {
+    if (!el.getAttribute('data-xr-z')) {
+      return 0;
+    }
+    else {
+      return Math.max(-100, Math.min(100, parseFloat(el.getAttribute('data-xr-z'))));
     }
   }
-  else {
-    const featured = [...document.querySelectorAll('[data-xr-z]')]
-      .map((el, idx) => {
-        const feature = {};
-        const rect = el.getBoundingClientRect();
-        feature.name = 'feature-' + idx + '-' + el.nodeName;
-        feature.translateZ = Math.max(-100, Math.min(100, parseFloat(el.getAttribute('data-xr-z'))));
-        feature.rect = {
-          x: Math.floor(rect.x),
-          y: Math.floor(rect.y),
-          width: Math.ceil(rect.width),
-          height: Math.ceil(rect.height)
-        };
-        feature.center = {
-          x: feature.rect.x + feature.rect.width / 2,
-          y: feature.rect.y + feature.rect.height / 2,
-        };
-        return feature;
-      });
-    ipcRenderer.invoke('featured', featured);
+  if (el.nodeName === 'H1') {
+    return 100;
   }
-  featuredEnabled = !featuredEnabled;
+  if (el.nodeName === 'H2') {
+    return 40;
+  }
+  if (el.nodeName === 'IMG') {
+    return 20;
+  }
+  return 0;
+}
+
+let featuresIn3dEnabled = false;
+let featureByName = {};
+ipcRenderer.on('toggle3d', _ => {
+  if (featuresIn3dEnabled) {
+    featuresIn3dEnabled = false;
+    return;
+  }
+
+  featuresIn3dEnabled = true;
+  let features = [];
+  featureByName = {};
+  if (document.querySelector('[data-xr-z]')) {
+    // Page is immersive 3D aware, let's apply the 3D effects it wants.
+    features = [...document.querySelectorAll('[data-xr-z]')]
+      .filter(el => !!el.getAttribute('data-xr-z'))
+      .map((el, idx) => {
+        const rect = el.getBoundingClientRect();
+        return {
+          name: 'feature-' + idx + '-' + el.nodeName,
+          translateZ: get3DEffect(el),
+          rect: {
+            x: Math.floor(rect.x),
+            y: Math.floor(rect.y),
+            width: Math.ceil(rect.width),
+            height: Math.ceil(rect.height)
+          },
+          el
+        };
+      });
+  }
+  else {
+    // Page is not 3D aware, let's apply default 3D effects
+    features = [...document.querySelectorAll('h1,h2,img')]
+      .map((el, idx) => {
+        const rect = el.getBoundingClientRect();
+        return {
+          name: 'feature-' + idx + '-' + el.nodeName,
+          translateZ: get3DEffect(el),
+          rect: {
+            x: Math.floor(rect.x),
+            y: Math.floor(rect.y),
+            width: Math.ceil(rect.width),
+            height: Math.ceil(rect.height)
+          },
+          el
+        };
+      });
+  }
+
+  // Only consider features that are visible in the absence of scrolling
+  // TODO: Support scrolling!
+  features = features
+    .filter(feature => Math.round(feature.translateZ) !== 0)
+    .filter(feature =>
+        (feature.rect.x + feature.rect.width < window.innerWidth) &&
+        (feature.rect.y + feature.rect.height < window.innerHeight));
+
+  for (const feature of features) {
+    feature.center = {
+      x: feature.rect.x + feature.rect.width / 2,
+      y: feature.rect.y + feature.rect.height / 2,
+    };
+    featureByName[feature.name] = feature.el;
+    delete feature.el;
+  }
+  ipcRenderer.invoke('features', features);
 });
 
-ipcRenderer.on('featuresupdated', async _ => {
-  for (const el of [...document.querySelectorAll('[data-xr-z]')]) {
-    el.style.visibility = 'hidden';
+ipcRenderer.on('toggleFeatureInContent', (_event, name) => {
+  const el = featureByName[name];
+  if (el) {
+    el.style.visibility = (el.style.visibility === 'hidden') ? 'visible' : 'hidden';
   }
 });
 

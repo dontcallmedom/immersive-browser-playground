@@ -4,11 +4,8 @@ document.addEventListener("DOMContentLoaded", () => {
   ipcRenderer.isLoaded();
 });
 
-ipcRenderer.onViewportGeometry(function (_event, width, height) {
-  viewport = {
-    width,
-    height
-  };
+ipcRenderer.onViewportGeometry(function (_event, geometry) {
+  viewport = geometry;
 });
 
 
@@ -33,7 +30,7 @@ ipcRenderer.onViewportGeometry(function (_event, width, height) {
         ipcRenderer.scroll(event.deltaY);
       });
 
-      ipcRenderer.onReset(async _event => {
+      ipcRenderer.onReset3D(async _event => {
         for (const featurePlane of Object.values(featured)) {
           featurePlane.remove();
         }
@@ -67,8 +64,8 @@ ipcRenderer.onViewportGeometry(function (_event, width, height) {
             image = imageCache[image].toDataURL();
           }
         } else {
-	  image = image.toDataURL();
-	}
+          image = image.toDataURL();
+        }
         this.pending = new Promise(resolve => {
           this.textureLoader.load(
             image,
@@ -80,7 +77,7 @@ ipcRenderer.onViewportGeometry(function (_event, width, height) {
             },
             null,
             err => {
-              console.error(err);
+              logger.error(err);
               resolve();
             }
           );
@@ -93,59 +90,76 @@ ipcRenderer.onViewportGeometry(function (_event, width, height) {
 
   let featured = {};
 
-  ipcRenderer.onPaint(async (_event, name, image, feature) => {
-    // Ignore paint events that are not for features
-    if (!name || !name.startsWith('feature-')) {
-      return;
-    }
+  ipcRenderer.onPaint3D(async (_event, feature, image) => {
     const contentPlane = document.querySelector('#content');
-    const material = contentPlane.getObject3D('mesh').material;
     const fromPageCenter = {
-      dx: feature.center.x - feature.contentSize.width / 2,
-      dy: feature.contentSize.height / 2 - feature.center.y
+      dx: feature.center.x - (viewport.width / viewport.scaleFactor) / 2,
+      dy: (viewport.height / viewport.scaleFactor) / 2 - feature.center.y
     }
-    console.log('fromPageCenter', fromPageCenter.dx, fromPageCenter.dy);
+    logger.log(feature.name, 'fromPageCenter', fromPageCenter.dx, fromPageCenter.dy);
     feature.position = {
-      x: contentPlane.object3D.position.x + fromPageCenter.dx / feature.contentSize.width * contentPlane.getAttribute('geometry').width,
-      y: contentPlane.object3D.position.y + fromPageCenter.dy / feature.contentSize.height * contentPlane.getAttribute('geometry').height,
+      x: contentPlane.object3D.position.x + fromPageCenter.dx / (viewport.width / viewport.scaleFactor) * contentPlane.getAttribute('geometry').width,
+      y: contentPlane.object3D.position.y + fromPageCenter.dy / (viewport.height / viewport.scaleFactor) * contentPlane.getAttribute('geometry').height,
       z: contentPlane.object3D.position.z
     };
-    console.log('position', feature.position.x, feature.position.y);
+    logger.log(feature.name, 'position', feature.position.x, feature.position.y);
     feature.geometry = {
-      width: contentPlane.getAttribute('geometry').width * feature.rect.width / feature.contentSize.width,
-      height: contentPlane.getAttribute('geometry').height * feature.rect.height / feature.contentSize.height
+      width: contentPlane.getAttribute('geometry').width * feature.rect.width / (viewport.width / viewport.scaleFactor),
+      height: contentPlane.getAttribute('geometry').height * feature.rect.height / (viewport.height / viewport.scaleFactor)
     };
-    console.log('geometry', feature.geometry.width, feature.geometry.height);
+    logger.log(feature.name, 'geometry', feature.geometry.width, feature.geometry.height);
 
     const textureLoader = new THREE.TextureLoader();
-    let featurePlane = featured[name];
+    let featurePlane = featured[feature.name];
     if (!featurePlane) {
       featurePlane = document.createElement('a-plane');
       document.querySelector('#content-container').appendChild(featurePlane);
-      featured[name] = featurePlane;
+      featured[feature.name] = featurePlane;
     }
 
     featurePlane.setAttribute('id', feature.name);
-    featurePlane.setAttribute('position', `${feature.position.x} ${feature.position.y} ${feature.position.z + 0.001}`);
+    featurePlane.setAttribute('position', `${feature.position.x} ${feature.position.y} ${feature.position.z + 0.0001}`);
     featurePlane.setAttribute('width', feature.geometry.width);
     featurePlane.setAttribute('height', feature.geometry.height);
     featurePlane.setAttribute('material', 'side:double; metalness:0');
     featurePlane.setAttribute('shadow', 'cast: true; receive: false');
+    featurePlane.setAttribute('visible', 'false');
+    featurePlane.setAttribute('animation__show', {
+      property: 'position',
+      to: { z: feature.position.z + feature.translateZ / 100 * ZMAX },
+      easing: 'easeInOutSine',
+      dur: 2000,
+      startEvents: 'show3d'
+    });
+    featurePlane.setAttribute('animation__hide', {
+      property: 'position',
+      to: { z: feature.position.z + 0.0001 },
+      easing: 'easeInOutSine',
+      dur: 1000,
+      startEvents: 'hide3d'
+    });
+    featurePlane.addEventListener('animationcomplete', (evt) => {
+      if (evt.detail.name === 'animation__hide') {
+        ipcRenderer.toggleFeatureInContent(feature.name);
+
+        // Give some time to content window to toggle visibility before we
+        // drop the 3D plane to avoid flickering.
+        // (TODO: would better be done with another back and forth message)
+        setTimeout(() => { featurePlane.remove(); }, 200);
+      }
+    });
     textureLoader.load(
       image,
       texture => {
         featurePlane.getObject3D('mesh').material.map = texture;
         featurePlane.getObject3D('mesh').material.needsUpdate = true;
-        featurePlane.setAttribute('animation', {
-          property: 'position',
-          to: { z: feature.position.z + feature.translateZ / 100 * ZMAX },
-          easing: 'easeInOutSine',
-          dur: 2000
-        });
+        ipcRenderer.toggleFeatureInContent(feature.name);
+        featurePlane.object3D.visible = true;
+        featurePlane.emit('show3d');
       },
       null,
       err => {
-        console.error(err);
+        logger.error(err);
       }
     );
   });
@@ -180,11 +194,11 @@ ipcRenderer.onViewportGeometry(function (_event, width, height) {
           break;
 
         case 'toggle-3d':
-          ipcRenderer.toggle3d();
           for (const featurePlane of Object.values(featured)) {
-            featurePlane.remove();
+            featurePlane.emit('hide3d');
           }
           featured = {};
+          ipcRenderer.toggle3d();
           break;
 
         case 'toggle-illustrate':

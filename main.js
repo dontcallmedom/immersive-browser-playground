@@ -26,19 +26,23 @@ let immersiveWindow;
  */
 let contentWindows = [];
 
+/**
+ * Number of companion windows (on top of the main one)
+ */
 const companionContentWindowsNumber = 4;
+
+/**
+ * Handle to the last painted image in the main offscreen content window.
+ *
+ * This last painted image is used to extract rectangles aimed at 3D effects.
+ */
+let lastPaintedImage;
+
 
 /**
  * Requested URL
  */
 let url = 'https://fr.wikipedia.org/wiki/Route_de_la_soie';
-
-/**
- * List of "features" to render with a 3D effect in the main content plane.
- * The list is sent by the main content window when 3D effects are enabled.
- */
-let featured;
-let featuredNeedsUpdate = false;
 
 /**
  * Sorted list of links to use to fill side content planes.
@@ -116,19 +120,7 @@ const createContentWindow = (position = 0) => {
       });
     }
     immersiveWindow.webContents.send('paint', "content" + position, resized);
-
-    if (position === 0 && featuredNeedsUpdate) {
-      contentWindow.webContents.send('featuresupdated');
-      featuredNeedsUpdate = false;
-      for (const feature of featured) {
-        feature.contentSize = {
-          width: resized.getSize().width,
-          height: resized.getSize().height
-        };
-        const crop = resized.crop(feature.rect);
-        immersiveWindow.webContents.send('paint', feature.name, crop.toDataURL(), feature);
-      }
-    }
+    lastPaintedImage = resized;
   });
   contentWindow.webContents.setFrameRate(10);
   contentWindows[position] = contentWindow;
@@ -142,9 +134,6 @@ const showMode = mode => {
     }
     break;
   case "3d":
-    for (let i = 0 ; i < companionContentWindowsNumber; i++) {
-      contentWindows[i+1].loadURL("about:blank");
-    }
     contentWindows[0].webContents.send('toggle3d');
     break;
   case "page":
@@ -193,7 +182,11 @@ app.whenReady().then(() => {
   // Send viewport geometry of main content plane to immersive browser
   // once it's ready to process the message, and load default page.
   ipcMain.handle('browserIsLoaded', function(e) {
-    immersiveWindow.webContents.send('viewportGeometry', defaultViewportWidth*scaleFactor, defaultViewportHeight*scaleFactor);
+    immersiveWindow.webContents.send('viewportGeometry', {
+      width: defaultViewportWidth*scaleFactor,
+      height: defaultViewportHeight*scaleFactor,
+      scaleFactor
+    });
     contentWindows[0].loadFile("content.html");
   });
 
@@ -224,28 +217,34 @@ app.whenReady().then(() => {
 
   // Received a list of features that should be highlighed from the main
   // offscreen content window
-  ipcMain.handle('featured', (event, list) => {
-    featured = list;
-    featuredNeedsUpdate = true;
+  ipcMain.handle('features', (event, features) => {
+    for (const feature of features) {
+      const crop = lastPaintedImage.crop(feature.rect);
+      immersiveWindow.webContents.send('paint3d', feature, crop.toDataURL());
+    }
+  });
+
+  // Relay the instruction from immersive window to toggle feature's visibility
+  // in content window.
+  ipcMain.handle('toggleFeatureInContent', (event, name) => {
+    contentWindows[0].webContents.send('toggleFeatureInContent', name);
+  });
+
+  // Reset 3D effects whenever the loaded content changes.
+  ipcMain.handle('beforeunload', _ => {
+    immersiveWindow.webContents.send('reset3d');
   });
 
   // Proxy user actions on buttons between immersive browser window
   // and the main offscreen content window
   ipcMain.handle('toggle3d', async () => {
-    await contentWindows[0].loadFile("content.html");
     showMode("3d");
   });
   ipcMain.handle('toggle-illustrate', async () => {
-    if (mode === 'classic') {
-      immersiveWindow.webContents.send('reset');
-    }
     await contentWindows[0].loadURL(url);
     showMode("page");
   });
   ipcMain.handle('toggle-navigate', async () => {
-    if (mode === 'classic') {
-      immersiveWindow.webContents.send('reset');
-    }
     await contentWindows[0].loadURL(url);
     showMode("navigation");
   });
