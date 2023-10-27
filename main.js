@@ -102,6 +102,8 @@ const createContentWindow = (position = 0) => {
     height: defaultViewportHeight
   };
   if (position === 0) {
+    options.transparent = true;
+    options.frame = false;
     options.webPreferences.preload = path.join(__dirname, 'preload-content.js')
   }
 
