@@ -20,17 +20,22 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  const wikiLinks = [...document.querySelectorAll('#bodyContent a[href^="/wiki/"]')];
+  let rawLinks = [...document.querySelectorAll('#bodyContent a[href^="/wiki/"]')]
+    .map(a => a.href.split('#')[0])
+    .filter(l => l.match(/\/wiki\/[^:]*$/));
+  if (rawLinks.length === 0) {
+    rawLinks = [...document.querySelectorAll('a[href]')];
+  }
 
-  const weightedLinks = wikiLinks.map(a => a.href.split('#')[0]).filter(l => l.match(/\/wiki\/[^:]*$/)).reduce((a, b) => {
+  const weightedLinks = rawLinks.reduce((a, b) => {
     if (!a[b]) {
       a[b] = 0;
     }
     a[b]++;
     return a;
   }, {});
-  ipcRenderer.invoke('sortedLinks', weightedLinks);
 
+  ipcRenderer.invoke('sortedLinks', weightedLinks);
 });
 
 window.addEventListener('beforeunload', () => {
@@ -85,6 +90,9 @@ function get3DEffect(el) {
     if (!el.getAttribute('data-xr-z')) {
       return 0;
     }
+    else if (el.getAttribute('data-xr-z') === 'background') {
+      return -100;
+    }
     else {
       return Math.max(-100, Math.min(100, parseFloat(el.getAttribute('data-xr-z'))));
     }
@@ -118,7 +126,7 @@ ipcRenderer.on('toggle3d', _ => {
       .filter(el => !!el.getAttribute('data-xr-z'))
       .map((el, idx) => {
         const rect = el.getBoundingClientRect();
-        return {
+        const feature = {
           name: 'feature-' + idx + '-' + el.nodeName,
           translateZ: get3DEffect(el),
           rect: {
@@ -129,6 +137,10 @@ ipcRenderer.on('toggle3d', _ => {
           },
           el
         };
+        if (el.getAttribute('src')) {
+          feature.src = el.getAttribute('src');
+        }
+        return feature;
       });
   }
   else {
@@ -155,8 +167,8 @@ ipcRenderer.on('toggle3d', _ => {
   features = features
     .filter(feature => Math.round(feature.translateZ) !== 0)
     .filter(feature =>
-        (feature.rect.x + feature.rect.width < window.innerWidth) &&
-        (feature.rect.y + feature.rect.height < window.innerHeight));
+        (feature.rect.x + feature.rect.width <= window.innerWidth) &&
+        (feature.rect.y + feature.rect.height <= window.innerHeight));
 
   for (const feature of features) {
     feature.center = {
@@ -177,11 +189,19 @@ ipcRenderer.on('toggleFeatureInContent', (_event, name) => {
 });
 
 ipcRenderer.on('illustrate', async () => {
-  console.log("illustrate!");
   await isLoaded;
-  console.log("loaded!", window.location.href);
-  const illustrations = [...document.querySelectorAll('figure[typeof~="mw:File/Thumb"] img')];
+  let illustrations = [...document.querySelectorAll('figure[typeof~="mw:File/Thumb"] img')];
+  if (illustrations.length === 0) {
+    illustrations = [...document.querySelectorAll('img')];
+  }
   console.log(illustrations.map(i => i.src));
   createIllustrationObserver(illustrations);
 });
 
+ipcRenderer.on('addUrl', async (_event, url, label) => {
+  await isLoaded;
+  const li = document.createElement('li');
+  li.innerHTML = `<a href="${url}">${label}</a>`;
+  document.querySelector('[data-urls]').appendChild(li);
+  document.querySelector('[data-nocustom').style.display = 'none';
+});

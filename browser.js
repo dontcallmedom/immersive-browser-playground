@@ -117,11 +117,17 @@ ipcRenderer.onViewportGeometry(function (_event, geometry) {
       featured[feature.name] = featurePlane;
     }
 
+    const toFront = feature.translateZ > 0 ? 1 : -1;
     featurePlane.setAttribute('id', feature.name);
-    featurePlane.setAttribute('position', `${feature.position.x} ${feature.position.y} ${feature.position.z + 0.0001}`);
+    featurePlane.setAttribute('position', `${feature.position.x} ${feature.position.y} ${feature.position.z + 0.001 * toFront}`);
     featurePlane.setAttribute('width', feature.geometry.width);
     featurePlane.setAttribute('height', feature.geometry.height);
-    featurePlane.setAttribute('material', 'side:double; metalness:0; transparent: true; opacity: 0.9;');
+    if (toFront === 1) {
+      featurePlane.setAttribute('material', 'side:double; metalness:0; transparent: true; opacity: 0.9;');
+    }
+    else {
+      featurePlane.setAttribute('material', 'side:double; metalness:0; transparent: false');
+    }
     featurePlane.setAttribute('shadow', 'cast: true; receive: false');
     featurePlane.setAttribute('visible', 'false');
     featurePlane.setAttribute('animation__show', {
@@ -133,7 +139,7 @@ ipcRenderer.onViewportGeometry(function (_event, geometry) {
     });
     featurePlane.setAttribute('animation__hide', {
       property: 'position',
-      to: { z: feature.position.z + 0.0001 },
+      to: { z: feature.position.z + 0.001 * toFront},
       easing: 'easeInOutSine',
       dur: 1000,
       startEvents: 'hide3d'
