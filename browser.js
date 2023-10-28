@@ -170,6 +170,7 @@ ipcRenderer.onViewportGeometry(function (_event, geometry) {
     );
   });
 
+  let mode;
   AFRAME.registerComponent('cursor-listener', {
     schema: {
       action: { type: 'string', default: 'content-click' }
@@ -195,8 +196,8 @@ ipcRenderer.onViewportGeometry(function (_event, geometry) {
           break;
 
         case 'toggle-wireframe':
-          const isVisible = document.querySelector('#wireframe').object3D.visible;
-          document.querySelector('#wireframe').object3D.visible = !isVisible;
+          const wireframeIsVisible = document.querySelector('#wireframe').object3D.visible;
+          document.querySelector('#wireframe').object3D.visible = !wireframeIsVisible;
           break;
 
         case 'toggle-3d':
@@ -208,10 +209,19 @@ ipcRenderer.onViewportGeometry(function (_event, geometry) {
           break;
 
         case 'toggle-illustrate':
+          const screenPlane = document.querySelector('#screen1');
+          const screenVisibility = (mode === 'navigate') ? true : !screenPlane.object3D.visible;
+          screenPlane.object3D.visible = screenVisibility;
+          mode = 'illustrate';
           ipcRenderer.toggleIllustrate();
           break;
 
         case 'toggle-navigate':
+          for (const screenPlane of [...document.querySelectorAll('[id^=screen]')]) {
+            const screenVisibility = (mode === 'illustrate') ? true : !screenPlane.object3D.visible;
+            screenPlane.object3D.visible = screenVisibility;
+          }
+          mode = 'navigate';
           ipcRenderer.toggleNavigate();
           break;
         }

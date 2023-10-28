@@ -133,9 +133,7 @@ const showMode = mode => {
     contentWindows[0].webContents.send('toggle3d');
     break;
   case "page":
-    for (let i = 1 ; i < companionContentWindowsNumber; i++) {
-      contentWindows[i+1].loadURL("about:blank");
-    }
+    contentWindows[1].loadURL('about:blank');
     contentWindows[0].webContents.send('illustrate');
     break;
   case "navigation":
