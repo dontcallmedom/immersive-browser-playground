@@ -38,12 +38,6 @@ const companionContentWindowsNumber = 4;
  */
 let lastPaintedImage;
 
-
-/**
- * Requested URL
- */
-let url = 'https://fr.wikipedia.org/wiki/Route_de_la_soie';
-
 /**
  * Sorted list of links to use to fill side content planes.
  * The list is sent by the main content window when the page is done loading.
@@ -75,7 +69,7 @@ const createImmersiveWindow = () => {
     contentWindows = null;
     immersiveWindow = null;
   });
-  immersiveWindow.loadFile('index.html');
+  immersiveWindow.loadFile('browser.html');
 };
 
 /**
@@ -139,9 +133,7 @@ const showMode = mode => {
     contentWindows[0].webContents.send('toggle3d');
     break;
   case "page":
-    for (let i = 1 ; i < companionContentWindowsNumber; i++) {
-      contentWindows[i+1].loadURL("about:blank");
-    }
+    contentWindows[1].loadURL('about:blank');
     contentWindows[0].webContents.send('illustrate');
     break;
   case "navigation":
@@ -165,9 +157,6 @@ app.whenReady().then(() => {
   for (let i = 0  ; i < 5 ; i++) {
     createContentWindow(i);
   }
-  if (process.argv[2]) {
-    url = process.argv[2];
-  }
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -189,7 +178,10 @@ app.whenReady().then(() => {
       height: defaultViewportHeight*scaleFactor,
       scaleFactor
     });
-    contentWindows[0].loadFile("content.html");
+    if (process.argv[2]) {
+      contentWindows[0].webContents.send('addUrl', process.argv[2], process.argv[3] ?? 'Requested URL');
+    }
+    contentWindows[0].loadFile("home.html");
   });
 
   // Proxy click and scroll events between the main content plane in the
@@ -221,8 +213,13 @@ app.whenReady().then(() => {
   // offscreen content window
   ipcMain.handle('features', (event, features) => {
     for (const feature of features) {
-      const crop = lastPaintedImage.crop(feature.rect);
-      immersiveWindow.webContents.send('paint3d', feature, crop.toDataURL());
+      if (feature.src) {
+        immersiveWindow.webContents.send('paint3d', feature, feature.src);
+      }
+      else {
+        const crop = lastPaintedImage.crop(feature.rect);
+        immersiveWindow.webContents.send('paint3d', feature, crop.toDataURL());
+      }
     }
   });
 
@@ -243,11 +240,9 @@ app.whenReady().then(() => {
     showMode("3d");
   });
   ipcMain.handle('toggle-illustrate', async () => {
-    await contentWindows[0].loadURL(url);
     showMode("page");
   });
   ipcMain.handle('toggle-navigate', async () => {
-    await contentWindows[0].loadURL(url);
     showMode("navigation");
   });
 

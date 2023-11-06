@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset=utf-8>
-    <title>Immersive Reader</title>
+    <title>Immersive browser</title>
     <script src="node_modules/aframe/dist/aframe.min.js"></script>
     <script src="browser.js"></script>
   </head>
@@ -45,7 +45,7 @@
       <a-entity id="content-container" position="0 1.6 -0.25">
         <a-plane id="content" cursor-listener
           width="0.297" height="0.223"
-		 material="side: double; transparent: true"
+          material="side: double; transparent: true; alphaTest: 0.5"
           shadow="cast: false; receive: true"
           paint-image="id:content0" data-raycastable></a-plane>
         <a-entity id="wireframe"
@@ -55,10 +55,10 @@
       </a-entity>
 
       <!-- supplemental screens -->
-      <a-plane material="src: #region1" id="screen1" position="0.3 1.6 -0.25" rotation="0 -10 0" paint-image="id:content1" width="0.297" height="0.223"></a-plane>
-      <a-plane material="src: #region2" id="screen2" position="0.6 1.6 -0.5" rotation="-5 -10 0" paint-image="id:content2" width="0.297" height="0.223"></a-plane>
-      <a-plane material="src: #region3" id="screen3" position="-0.3 1.6 -0.75" rotation="-5 20 0" paint-image="id:content3" width="0.297" height="0.223"></a-plane>
-      <a-plane material="src: #region4" id="screen4" position="-0.6 1.6 -0.75" rotation="-5 -20 0" paint-image="id:content4" width="0.297" height="0.223"></a-plane>
+      <a-plane material="src: #region1" id="screen1" position="0.3 1.6 -0.25" rotation="0 -10 0" paint-image="id:content1" width="0.297" height="0.223" visible="false"></a-plane>
+      <a-plane material="src: #region2" id="screen2" position="0.6 1.6 -0.5" rotation="-5 -10 0" paint-image="id:content2" width="0.297" height="0.223" visible="false"></a-plane>
+      <a-plane material="src: #region3" id="screen3" position="-0.3 1.6 -0.75" rotation="-5 20 0" paint-image="id:content3" width="0.297" height="0.223" visible="false"></a-plane>
+      <a-plane material="src: #region4" id="screen4" position="-0.6 1.6 -0.75" rotation="-5 -20 0" paint-image="id:content4" width="0.297" height="0.223" visible="false"></a-plane>
 
       <!-- Basic UI buttons -->
       <a-entity position="-0.10 1.48 -0.23">
@@ -82,13 +82,13 @@
           <a-entity mixin="button-container"></a-entity>
           <a-entity mixin="button" data-raycastable cursor-listener="action:toggle-illustrate"></a-entity>
           <a-entity position="0.16 0 0"
-            text="value: Wikipedia companion; width:0.30; color: black"></a-entity>
+            text="value: Toggle side image; width:0.30; color: black"></a-entity>
         </a-entity>
         <a-entity position="0 -0.06 0">
           <a-entity mixin="button-container"></a-entity>
           <a-entity mixin="button" data-raycastable cursor-listener="action:toggle-navigate"></a-entity>
           <a-entity position="0.16 0 0"
-            text="value: Wikipedia Navigator; width:0.30; color: black"></a-entity>
+            text="value: Toggle companion nav; width:0.30; color: black"></a-entity>
         </a-entity>
       </a-entity>
 

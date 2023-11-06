@@ -117,11 +117,17 @@ ipcRenderer.onViewportGeometry(function (_event, geometry) {
       featured[feature.name] = featurePlane;
     }
 
+    const toFront = feature.translateZ > 0 ? 1 : -1;
     featurePlane.setAttribute('id', feature.name);
-    featurePlane.setAttribute('position', `${feature.position.x} ${feature.position.y} ${feature.position.z + 0.0001}`);
+    featurePlane.setAttribute('position', `${feature.position.x} ${feature.position.y} ${feature.position.z + 0.001 * toFront}`);
     featurePlane.setAttribute('width', feature.geometry.width);
     featurePlane.setAttribute('height', feature.geometry.height);
-    featurePlane.setAttribute('material', 'side:double; metalness:0; transparent: true; opacity: 0.9;');
+    if (toFront === 1) {
+      featurePlane.setAttribute('material', 'side:double; metalness:0; transparent: true; opacity: 0.9;');
+    }
+    else {
+      featurePlane.setAttribute('material', 'side:double; metalness:0; transparent: false');
+    }
     featurePlane.setAttribute('shadow', 'cast: true; receive: false');
     featurePlane.setAttribute('visible', 'false');
     featurePlane.setAttribute('animation__show', {
@@ -133,7 +139,7 @@ ipcRenderer.onViewportGeometry(function (_event, geometry) {
     });
     featurePlane.setAttribute('animation__hide', {
       property: 'position',
-      to: { z: feature.position.z + 0.0001 },
+      to: { z: feature.position.z + 0.001 * toFront},
       easing: 'easeInOutSine',
       dur: 1000,
       startEvents: 'hide3d'
@@ -164,6 +170,7 @@ ipcRenderer.onViewportGeometry(function (_event, geometry) {
     );
   });
 
+  let mode;
   AFRAME.registerComponent('cursor-listener', {
     schema: {
       action: { type: 'string', default: 'content-click' }
@@ -189,8 +196,8 @@ ipcRenderer.onViewportGeometry(function (_event, geometry) {
           break;
 
         case 'toggle-wireframe':
-          const isVisible = document.querySelector('#wireframe').object3D.visible;
-          document.querySelector('#wireframe').object3D.visible = !isVisible;
+          const wireframeIsVisible = document.querySelector('#wireframe').object3D.visible;
+          document.querySelector('#wireframe').object3D.visible = !wireframeIsVisible;
           break;
 
         case 'toggle-3d':
@@ -202,10 +209,19 @@ ipcRenderer.onViewportGeometry(function (_event, geometry) {
           break;
 
         case 'toggle-illustrate':
+          const screenPlane = document.querySelector('#screen1');
+          const screenVisibility = (mode === 'navigate') ? true : !screenPlane.object3D.visible;
+          screenPlane.object3D.visible = screenVisibility;
+          mode = 'illustrate';
           ipcRenderer.toggleIllustrate();
           break;
 
         case 'toggle-navigate':
+          for (const screenPlane of [...document.querySelectorAll('[id^=screen]')]) {
+            const screenVisibility = (mode === 'illustrate') ? true : !screenPlane.object3D.visible;
+            screenPlane.object3D.visible = screenVisibility;
+          }
+          mode = 'navigate';
           ipcRenderer.toggleNavigate();
           break;
         }
