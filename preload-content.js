@@ -10,7 +10,7 @@ let isLoaded = new Promise(res => window.addEventListener('DOMContentLoaded', re
 
 window.addEventListener('DOMContentLoaded', () => {
   ipcRenderer.on("click", function (_event, x, y) {
-    const target = document.elementFromPoint(x, y);
+    const target = document.elementFromPoint(x / window.devicePixelRatio, y / window.devicePixelRatio);
     if (target) {
       target.dispatchEvent(new PointerEvent("click", {
         bubbles: true,
