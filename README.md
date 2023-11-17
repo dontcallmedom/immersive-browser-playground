@@ -132,3 +132,8 @@ Being rookies in 3D authoring, and used to seeing more and more realistic 3D, we
 - Apple's [Meet Safari for spatial computing](https://developer.apple.com/videos/play/wwdc2023/10279/) video during WWDC 2023.
 - [Introduction to Meta Quest Browser](https://developer.oculus.com/documentation/web/).
 - François' keynote speech "W3C and immersive 3D worlds in Web browsers – Evolutions of the Web platform" (see [annotated Google slides](https://docs.google.com/presentation/d/1oGhHnmHVzV4HebsCAFAuGrS4s_3OsrDQaGqQ3wSWFTI/edit)) during the [Web3D 2023](https://web3d.siggraph.org/) conference in San Sebastian.
+
+## Credits
+
+- "[Antique wooden desk](https://skfb.ly/orwYM)" by Lorenzo Drago is licensed under [Creative Commons Attribution](http://creativecommons.org/licenses/by/4.0/).
+- "[Conference Room1](https://skfb.ly/6CszB)" by MozillaHubs is licensed under [Creative Commons Attribution](http://creativecommons.org/licenses/by/4.0/).

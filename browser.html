@@ -11,6 +11,8 @@
       <a-assets timeout="10000">
         <img id="sky" src="media/blue.jpg" />
         <img id="grass" src="media/grass.jpg" />
+        <a-asset-item id="room" src="media/conference_room1.glb"></a-asset-item>
+        <a-asset-item id="desk" src="media/antique_wooden_desk.glb"></a-asset-item>
         <canvas id="region1" />
         <canvas id="region2" />
         <canvas id="region3" />
@@ -31,18 +33,22 @@
       </a-assets>
 
       <!-- Camera -->
-      <a-entity id="rig" position="-0.05 1.65 0" rotation="-10 -8 0">
-        <a-entity camera look-controls wasd-controls="acceleration:1" position="0 0 0"></a-entity>
+      <a-entity id="rig" position="-0.15 1.25 0.2" rotation="-15 -8 0">
+        <a-entity camera look-controls wasd-controls="acceleration:3" position="0 0 0"></a-entity>
       </a-entity>
 
       <!-- Sky and floor -->
       <a-sky src="#sky"></a-sky>
-      <a-plane src="#grass" repeat="10 10"
+      <a-plane position="0 -0.001 0" src="#grass" repeat="10 10"
         height="10" width="10"
         rotation="-90 0 0"></a-plane>
 
+      <!-- Room and desk -->
+      <a-entity gltf-model="#room" position="0 0 3" rotation="0 180 0" scale="0.8 0.8 0.8"></a-entity>
+      <a-entity gltf-model="#desk" position="0 0 -0.7" rotation="0 -90 0"></a-entity>
+
       <!-- Browsing context window plane and containing box -->
-      <a-entity id="content-container" position="0 1.6 -0.25">
+      <a-entity id="content-container" position="0 1.2 -0.25">
         <a-plane id="content" cursor-listener
           width="0.297" height="0.223"
           material="side: double; transparent: true; alphaTest: 0.5"
@@ -55,13 +61,13 @@
       </a-entity>
 
       <!-- supplemental screens -->
-      <a-plane material="src: #region1" id="screen1" position="0.3 1.6 -0.25" rotation="0 -10 0" paint-image="id:content1" width="0.297" height="0.223" visible="false"></a-plane>
-      <a-plane material="src: #region2" id="screen2" position="0.6 1.6 -0.5" rotation="-5 -10 0" paint-image="id:content2" width="0.297" height="0.223" visible="false"></a-plane>
-      <a-plane material="src: #region3" id="screen3" position="-0.3 1.6 -0.75" rotation="-5 20 0" paint-image="id:content3" width="0.297" height="0.223" visible="false"></a-plane>
-      <a-plane material="src: #region4" id="screen4" position="-0.6 1.6 -0.75" rotation="-5 -20 0" paint-image="id:content4" width="0.297" height="0.223" visible="false"></a-plane>
+      <a-plane material="src: #region1" id="screen1" position="0.3 1.2 -0.25" rotation="0 -10 0" paint-image="id:content1" width="0.297" height="0.223" visible="false"></a-plane>
+      <a-plane material="src: #region2" id="screen2" position="0.6 1.2 -0.5" rotation="-5 -10 0" paint-image="id:content2" width="0.297" height="0.223" visible="false"></a-plane>
+      <a-plane material="src: #region3" id="screen3" position="-0.3 1.2 -0.75" rotation="-5 20 0" paint-image="id:content3" width="0.297" height="0.223" visible="false"></a-plane>
+      <a-plane material="src: #region4" id="screen4" position="-0.6 1.2 -0.75" rotation="-5 -20 0" paint-image="id:content4" width="0.297" height="0.223" visible="false"></a-plane>
 
       <!-- Basic UI buttons -->
-      <a-entity position="-0.10 1.48 -0.23">
+      <a-entity position="-0.10 1.06 -0.23">
         <a-entity
           geometry="primitive: plane; width: 0.18; height: 0.1"
           material="color: #ffb347"
