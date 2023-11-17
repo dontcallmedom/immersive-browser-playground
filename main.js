@@ -9,6 +9,12 @@ const defaultViewportWidth = 800;
 const defaultViewportHeight = 600;
 
 /**
+ * Current mode
+ */
+let mode = "classic";
+
+
+/**
  * Scale factor of the primary display.
  */
 let scaleFactor;
@@ -106,6 +112,9 @@ const createContentWindow = (position = 0) => {
     if (!immersiveWindow) {
       return;
     }
+    if (position > 0 && mode === "page") {
+      return;
+    }
     let resized = image;
     if (scaleFactor !== 1) {
       // Immersive browser window uses the image as texture. The dimensions of
@@ -122,7 +131,8 @@ const createContentWindow = (position = 0) => {
   contentWindows[position] = contentWindow;
 };
 
-const showMode = mode => {
+const showMode = newMode => {
+  mode = newMode;
   switch (mode) {
   case "classic":
     for (let i = 0 ; i < companionContentWindowsNumber; i++) {
